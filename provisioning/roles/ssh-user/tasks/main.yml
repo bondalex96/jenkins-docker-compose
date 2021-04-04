@@ -1,0 +1,19 @@
+- name: Add a new user named {{ user_name }}
+  user:
+      name: "{{ user_name }}"
+      shell: /bin/bash
+      password: "!"
+      groups: "{{ user_groups }}"
+      state: present
+
+- name: Add {{ user_name }} user to the sudoers
+  copy:
+      dest: "/etc/sudoers.d/{{ item }}"
+      content: "{{ item }} ALL=(ALL)  NOPASSWD: ALL"
+  with_items:
+  - "{{ user_name }}"
+
+- name: Add user authorized key
+  authorized_key:
+      user: "{{ user_name }}"
+      key: "{{ lookup('file', '{{ ssh_pub_path }}') }}"

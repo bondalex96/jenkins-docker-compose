@@ -1,0 +1,68 @@
+version: '3.7'
+
+services:
+    jenkins:
+        build:
+            dockerfile: docker/jenkins/Dockerfile
+            context: .
+        volumes:
+          - jenkins-data:/var/jenkins_home
+          - docker-certs:/certs/client:ro
+          - ./ssh:/var/jenkins_home/.ssh
+        environment:
+          LETSENCRYPT_EMAIL: ${EMAIL}
+          LETSENCRYPT_HOST: ${DOMAIN_NAME}
+          VIRTUAL_HOST: ${DOMAIN_NAME}
+          VIRTUAL_PORT: 8080
+          DOCKER_HOST: tcp://docker:2376
+          DOCKER_CERT_PATH: /certs/client
+          DOCKER_TLS_VERIFY: 1
+        depends_on:
+          - docker
+
+    docker:
+      image: docker:dind
+      privileged: true
+      environment:
+        DOCKER_TLS_CERTDIR: /certs
+      volumes:
+        - /etc/docker/dind-daemon.json:/etc/docker/daemon.json:ro
+        - jenkins-data:/var/jenkins_home
+        - docker-certs:/certs/client
+        - docker-data:/var/lib/docker
+
+    proxy:
+      image: jwilder/nginx-proxy
+      container_name: nginx-proxy
+      restart: always
+      ports:
+        - 80:80
+        - 443:443
+      volumes:
+        - html:/usr/share/nginx/html
+        - dhparam:/etc/nginx/dhparam
+        - hosts:/etc/nginx/vhost.d
+        - certs:/etc/nginx/certs:ro
+        - /var/run/docker.sock:/tmp/docker.sock:ro
+
+    letsencrypt:
+      image: jrcs/letsencrypt-nginx-proxy-companion
+      restart: always
+      environment:
+        NGINX_PROXY_CONTAINER: nginx-proxy
+      depends_on:
+        - proxy
+      volumes:
+        - certs:/etc/nginx/certs:rw
+        - hosts:/etc/nginx/vhost.d
+        - html:/usr/share/nginx/html
+        - /var/run/docker.sock:/var/run/docker.sock:ro
+
+volumes:
+  jenkins-data:
+  docker-certs:
+  docker-data:
+  certs:
+  hosts:
+  dhparam:
+  html:

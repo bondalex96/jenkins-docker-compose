@@ -1,0 +1,4 @@
+/.idea
+/ssh*
+!/ssh/.gitkeep
+.env

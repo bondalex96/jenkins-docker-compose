@@ -1,0 +1,23 @@
+- hosts: agent
+  become: yes
+  remote_user: root
+  vars:
+    user_groups: docker
+    user_name: jenkins
+  roles:
+    - add-swap
+    - install-gnupg2
+    - role: geerlingguy.docker
+      vars:
+        ansible_os_family: 'Debian'
+        docker_edition: 'ce'
+        docker_group: 'docker'
+        docker_compose_version: '1.25.0'
+    - role: docker-cache
+      vars:
+        config_path: /etc/docker/daemon.json
+    - docker-prune-periodic
+    - ssh-user
+    - copy-ssh
+    - agent
+    - java

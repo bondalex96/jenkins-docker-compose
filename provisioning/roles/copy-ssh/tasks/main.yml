@@ -1,0 +1,14 @@
+- name: Creates .ssh directory for {{ user_name }}
+  file:
+    path=/home/{{ user_name }}/.ssh
+    state=directory
+    owner={{ user_name }}
+    group={{ user_name }}
+
+- name: Upload the private ssh key
+  copy:
+    content={{ lookup('file', '{{ ssh_private_path }}') }}
+    dest=/home/{{ user_name }}/.ssh/id_rsa
+    owner={{ user_name }}
+    group={{ user_name }}
+    mode=0600
